@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+    <head>    
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <script src="lodash.js"></script>
+        <link rel="stylesheet" href="normalize.css">
+        <script src="alpine.3.7.0.min.js" defer></script>
+        <script src="luxon.min.js"></script>
+        <link rel="icon" href="favicon.ico">
+        <style>
+            body {
+                display: grid;
+                place-items: center;
+                height: 100vh;
+                background-color: #000;
+            }
+
+            #lightgrid {
+                width: 95vmin;
+                max-width: 90vw;
+
+                display: grid;
+                grid-template: repeat(4, 1fr) / repeat(5, 1fr);
+                column-gap: 6.5vmin;
+                row-gap: 6.5vmin;
+            }
+
+            .lightcell {
+                position: relative;
+                aspect-ratio: 1;
+            }
+
+            .lit {
+            }
+
+            .unlit {
+                filter: opacity(0.1) blur(0.25vw);
+            }
+
+            .light {
+                position: absolute;
+                top: 0; left: 0; right: 0; bottom: 0;
+                z-index: 2;
+            }
+
+            .light svg {
+                height: 100%;
+                width: 100%;
+            }
+
+            .glow {
+                transform: scale(1.1);
+                filter: blur(1vmin) brightness(0.4);
+                position: absolute;
+                top: 0; left: 0; right: 0; bottom: 0;
+                z-index: 1;
+            }
+
+            .unlit .glow {
+                transform: scale(1);
+                filter: inherit;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div id="lightgrid" x-data="lightgrid">
+            <template x-for="light in lights">
+                <div class="lightcell" :class="((currCount & (1 << light.position)) > 0)?'lit':'unlit'">
+                    <div class="light glow" x-html="light.html"></div>
+                    <div class="light mainlight" x-html="light.html"></div>
+                </div>
+            </template>
+
+            <!--div class="lightcell">
+                <svg class="light" viewBox="0 0 80 80" fill="none" role="img" xmlns="http://www.w3.org/2000/svg" width="128" height="128"><title>Sarah Winnemucca</title><mask id="mask__marble" maskUnits="userSpaceOnUse" x="0" y="0" width="80" height="80"><rect width="80" height="80" fill="#FFFFFF" rx="160"></rect></mask><g mask="url(#mask__marble)"><rect width="80" height="80" fill="#edd75a"></rect><path filter="url(#prefix__filter0_f)" d="M32.414 59.35L50.376 70.5H72.5v-71H33.728L26.5 13.381l19.057 27.08L32.414 59.35z" fill="#73b06f" transform="translate(-2 -2) rotate(-242 40 40) scale(1.5)"></path><path filter="url(#prefix__filter0_f)" style="mix-blend-mode: overlay;" d="M22.216 24L0 46.75l14.108 38.129L78 86l-3.081-59.276-22.378 4.005 12.972 20.186-23.35 27.395L22.215 24z" fill="#0c8f8f" transform="translate(-7 7) rotate(-183 40 40) scale(1.5)"></path></g><defs><filter id="prefix__filter0_f" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feGaussianBlur stdDeviation="7" result="effect1_foregroundBlur"></feGaussianBlur></filter></defs></svg>
+                <svg class="glow" viewBox="0 0 80 80" fill="none" role="img" xmlns="http://www.w3.org/2000/svg" width="128" height="128"><title>Sarah Winnemucca</title><mask id="mask__marble" maskUnits="userSpaceOnUse" x="0" y="0" width="80" height="80"><rect width="80" height="80" fill="#FFFFFF" rx="160"></rect></mask><g mask="url(#mask__marble)"><rect width="80" height="80" fill="#edd75a"></rect><path filter="url(#prefix__filter0_f)" d="M32.414 59.35L50.376 70.5H72.5v-71H33.728L26.5 13.381l19.057 27.08L32.414 59.35z" fill="#73b06f" transform="translate(-2 -2) rotate(-242 40 40) scale(1.5)"></path><path filter="url(#prefix__filter0_f)" style="mix-blend-mode: overlay;" d="M22.216 24L0 46.75l14.108 38.129L78 86l-3.081-59.276-22.378 4.005 12.972 20.186-23.35 27.395L22.215 24z" fill="#0c8f8f" transform="translate(-7 7) rotate(-183 40 40) scale(1.5)"></path></g><defs><filter id="prefix__filter0_f" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feGaussianBlur stdDeviation="7" result="effect1_foregroundBlur"></feGaussianBlur></filter></defs></svg>
+            </div-->
+        </div>
+        <script>
+            let cachedPregenMarbles = null;
+
+            async function getPregenMarble() {
+                if (!cachedPregenMarbles) {
+                    cachedPregenMarbles = (await (await fetch('pregenMarbles.txt')).text()).split(/\r?\n/);
+                    cachedPregenMarbles.pop(); // bash script putting a newline at end of file. whatever.
+                }
+                return _.sample(cachedPregenMarbles);
+            }
+
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('lightgrid', () => ({
+                    lights: [],
+                    numLights: 4*5,
+                    currCount: 0,
+        
+                    async init() {
+                        for (let i=0;i<this.numLights;i++) {
+                            let newLight = {
+                                html: '',
+                            }
+                            newLight.position = this.numLights - 1 - (Math.floor(i / 5) + 4*(i%5));
+                            newLight.html = await getPregenMarble();
+                            this.lights.push(newLight)
+                        }
+
+                        setInterval(() => {
+                            //this.currCount = (this.currCount + 1) % (1 << this.numLights);
+                            
+                            let now = luxon.DateTime.now()
+                            let startOfToday = now.startOf('day')
+                            let startOfThisWeek = startOfToday.startOf('week').minus({day: 1})
+                            let endOfThisWeek = startOfToday.endOf('week').minus({day: 1, second: 5}) // remember to minus 5 seconds for a burst of beauty at the end of the week!
+
+                            // Get epoch second of the beginning of this week
+                            // Get epoch second of the end of this week
+                            // Get epoch second of now
+                            // How far downweek are we, as a fraction?
+                            let fractionDownweek = (now.toMillis() - startOfThisWeek.toMillis()) / (endOfThisWeek.toMillis() - startOfThisWeek.toMillis())
+                            console.log(fractionDownweek)
+                            this.currCount = fractionDownweek*((1 << this.numLights)-1);
+                        }, 25);
+                    },
+
+                }))
+            })
+        </script>
+    </body>
+</html>
