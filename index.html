@@ -105,9 +105,22 @@
                             newLight.html = await getPregenMarble();
                             this.lights.push(newLight)
                         }
+                        // Because 4*5 lights made changes too fast, remove two lights at top of grid to make "crennelated castle" look
+                        // Black out indexes 1 & 3. There are no lights with positions 0 and 1 afterwards.
+                        // Bump up all positions as appropriate
+                        for (let i=0;i<this.numLights;i++) {
+                            if (this.lights[i].position < 15) {
+                                this.lights[i].position++;
+                            }
+                            if (this.lights[i].position < 7+1) {
+                                this.lights[i].position++;
+                            }
+                        }
+                        this.lights[1].html = '';
+                        this.lights[3].html = '';
 
                         setInterval(() => {
-                            //this.currCount = (this.currCount + 1) % (1 << this.numLights);
+                            //this.currCount = (this.currCount + 256) % (1 << this.numLights);
                             
                             let now = luxon.DateTime.now()
                             let startOfToday = now.startOf('day')
@@ -121,7 +134,7 @@
                             let fractionDownweek = (now.toMillis() - startOfThisWeek.toMillis()) / (endOfThisWeek.toMillis() - startOfThisWeek.toMillis())
                             console.log(fractionDownweek)
                             this.currCount = fractionDownweek*((1 << this.numLights)-1);
-                        }, 25);
+                        }, 100);
                     },
 
                 }))
